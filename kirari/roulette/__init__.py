@@ -15,8 +15,8 @@ from kirari.admin import is_user, is_admin, error
 logger = logging.getLogger(__name__)
 
 def get_time():
-    ns = time.time_ns()
-    return (ns // (10 ** 9))
+    sec = time.time()
+    return int(sec)
 
 def is_game_on():
     return db.common_read("game_on")
