@@ -138,7 +138,7 @@ async def bet(ctx, bet_str, bet_value):
     Bet by **%s**:\nYou have bet on the following %d position(s): ```%s```The value of your current bet is **%d%s** (+%d, -%d).
     """ % ( member_name,
             len(bet),
-            " ".join(map(str, sorted(list(bet)))), 
+            "<you have bet on nothing>" if len(bet) == 0 else " ".join(map(str, sorted(list(bet)))), 
             bet_value,
             coin_symbol,
             positive_potential,
