@@ -17,6 +17,6 @@ def process_mention(txt):
 
 async def bot_error_handler(ctx, exception):
     if isinstance(exception, commands.MissingRequiredArgument):
-        await ctx.send("You're missing some argument. Check `k%help`")
+        await ctx.send("You're missing some argument. Check `k;help`")
     else:
         raise exception

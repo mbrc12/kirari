@@ -236,7 +236,7 @@ async def begin(ctx):
     
     summary += """```\nKirari's delta: `%s%d%s`\n""" % (
             '+' if server_delta >= 0 else '-',
-            delta if delta >= 0 else -delta,
+            server_delta if server_delta >= 0 else -server_delta,
             coin_symbol
             )
     db.common_write("game_on", False)
