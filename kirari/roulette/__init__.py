@@ -38,49 +38,40 @@ def get_delta(win, bet_size, bet_value):
 async def parse_bet(ctx, bet_str):
     bets = bet_str.split(',')
     bet = set([])
-
-    for phrase in bets:
-        if phrase.find('~') >= 0:
-            a, b = phrase.split('~')
-            try:
+    try: 
+        for phrase in bets:
+            if phrase.find('~') >= 0:
+                a, b = phrase.split('~')
                 if a == "":
                     a = "1"
                 if b == "":
                     b = str(roulette_size)
                 a = int(a)
                 b = int(b)
-            except Exception:
-                await error(ctx, "Wrong bet format.")
-                return
-            for val in range(1, roulette_size + 1):
-                if a <= val and val <= b:
-                    bet.add(val)
+                for val in range(1, roulette_size + 1):
+                    if a <= val and val <= b:
+                        bet.add(val)
 
-        elif phrase.find('m') >= 0:
-            m, r = phrase.split('m')
-            try:
+            elif phrase.find('m') >= 0:
+                m, r = phrase.split('m')
                 m = int(m)
                 if r == "": 
                     r = "0"
                 r = int(r)
-            except Exception:
-                await error(ctx, "Wrong bet format.")
-                return
-            for val in range(1, roulette_size + 1):
-                if val % m == r:
-                    bet.add(val)
-        else:
-            value = 0
-            try:
+                for val in range(1, roulette_size + 1):
+                    if val % m == r:
+                        bet.add(val)
+            else:
+                value = 0
                 value = int(phrase)
-            except Exception:
-                await error(ctx, "Wrong bet format.")
-                return
-            if 1 <= value and value <= roulette_size:
-                bet.add(value)
+                if 1 <= value and value <= roulette_size:
+                    bet.add(value)
 
+    except Exception:
+        await error(ctx, "Wrong bet format. Please check `k;help bet`.")
+        return set([]), -1  # Empty bet
 
-    return bet
+    return bet, 0
 
 
 @commands.command(brief = "Make a bet")
@@ -100,6 +91,10 @@ async def bet(ctx, bet_str, bet_value):
 
        Finally, all bet values that do not lie in the roulette range (1..36)
        are excluded from the bet make.
+        
+       Example:
+       ~5,6m1,35 bets on the following values:
+       1, 2, 3, 4, 5, 35 and all numbers of the form 6k + 1, like 7, 13 etc.
     """
 
     uid = ctx.author.id
@@ -124,20 +119,30 @@ async def bet(ctx, bet_str, bet_value):
         await error(ctx, "You cannot bet more than what you have!")
         return
 
-    bet = await parse_bet(ctx, bet_str)
+    bet, flag = await parse_bet(ctx, bet_str)
     
+    if flag < 0:
+        return
+
     db.db_write(uid, "bet", bet)
     db.db_write(uid, "bet_value", bet_value)
 
     member_name = db.db_read(uid, "name")
+    
+    iabs = lambda x : x if x >= 0 else -x
+    
+    positive_potential = iabs(get_delta(True, len(bet), bet_value))
+    negative_potential = iabs(get_delta(False, len(bet), bet_value))
 
     response = """
-    Bet by **%s**:\nYou have bet on the following %d position(s): ```%s```The value of your current bet is **%d%s**.
+    Bet by **%s**:\nYou have bet on the following %d position(s): ```%s```The value of your current bet is **%d%s** (+%d, -%d).
     """ % ( member_name,
             len(bet),
             " ".join(map(str, sorted(list(bet)))), 
             bet_value,
-            coin_symbol)
+            coin_symbol,
+            positive_potential,
+            negative_potential)
 
     await ctx.send(response)
      
