@@ -40,6 +40,13 @@ async def admins(ctx):
     response += "```\n"
     await ctx.send(response)
     
+@commands.command(brief = 'Get userID of someone')
+async def id(ctx, user):
+    converter = commands.MemberConverter()
+    member = await converter.convert(ctx, user)
+    await ctx.send("Converted: `%s`" % member.id)
+
+
 @commands.command()
 async def my_id(ctx):
     await ctx.send(f"Your ({ctx.author.name}'s) discord ID is : `{ctx.author.id}`")
@@ -230,6 +237,7 @@ async def cf_refresh(ctx):
     await ctx.send(response)
 
 exports = [
+        id,
         intro,
         echo,
         admins, 

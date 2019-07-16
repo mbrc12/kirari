@@ -274,7 +274,7 @@ async def ranklist(ctx):
 
     server_value = db.db_read(server_uid, "score")
 
-    for (score, member_name) in users:
+    for (score, member_name) in sorted(users):
         spc = " " * (20 - len(member_name))
         response += "%s: %s [%d%s]\n" % (member_name, spc, score, coin_symbol)
 

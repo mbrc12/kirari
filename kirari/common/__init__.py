@@ -11,8 +11,8 @@ def process(txt):
 def process_mention(txt):
     txt = str(txt)
     # Remove all stuff till first digit
-    pos = [i for i in range(len(txt)) if txt[i].isdigit()][0]
-    return int(txt[pos:-1])
+    pos = [c for c in txt if c.isdigit()]
+    return int("".join(pos))
 
 
 async def bot_error_handler(ctx, exception):
