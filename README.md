@@ -1,4 +1,4 @@
-#Kirari
+# Kirari
 
 ![Kirari's image](https://i.imgur.com/h5wSa9O.png)
 
