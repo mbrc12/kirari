@@ -1,0 +1,240 @@
+import logging
+import sys
+
+import discord
+from discord.ext import commands
+
+import kirari.db as db
+from kirari.common import *
+import kirari.codeforces as cf
+from kirari.constants import *
+
+logger = logging.getLogger(__name__)
+
+@commands.command()
+async def echo(ctx):
+    await ctx.send(process(ctx.message.content))
+
+@commands.command(brief = "Show the list of all admins")
+async def admins(ctx):
+    """
+    Show the list of all admins
+    """
+
+    admin_list = db.common_read("admin_list")
+
+    if admin_list == []:
+        await ctx.send("No one is an admin.")
+        return
+
+    response = "The following members are admins:```\n"
+
+    for admin_id in admin_list:
+        admin_member_name = db.db_read(admin_id, "name")
+        response += "%s\n" % admin_member_name
+    
+    response += "```\n"
+    await ctx.send(response)
+    
+@commands.command()
+async def my_id(ctx):
+    await ctx.send(f"Your ({ctx.author.name}'s) discord ID is : `{ctx.author.id}`")
+
+def is_admin(uid):
+    admin_list = db.common_read("admin_list")
+    return uid in admin_list
+
+def is_user(uid):
+    user_list = db.common_read("user_list")
+    return uid in user_list
+
+@commands.command(brief = "Check whether you are an admin")
+async def am_i_admin(ctx):
+
+    """
+    Checks whether you are an admin.
+    """
+
+    uid = ctx.author.id 
+    await ctx.send("You are%s an admin." % ("" if is_admin(uid) else " not"))
+
+async def error(ctx, msg):
+    await ctx.send("**ERROR:** %s" % msg)
+
+async def refuse(ctx):
+    await error(ctx, "You do not have the necessary permissions for this action.")
+
+async def admin_check(ctx):
+    if not is_admin(ctx.author.id):
+        await refuse(ctx)
+        return False
+    else:
+        return True
+
+@commands.command(brief = "Register a new user")
+async def register(ctx, user, cf_id):
+
+    """
+    register <@mention the user> <cf-username> registers a new user 
+    to Kirari under Codeforces username <cf-username>. The commanding
+    user must be admin.
+    """
+
+    if not await admin_check(ctx):
+        return
+
+    uid = process_mention(user)
+
+    if is_user(uid):
+        await error(ctx, "%s already exists in the database. If you want to update CF username, please use `k%cf_update`." % db.db_read(uid, "name"))
+        return
+
+    if not cf.user_exists(cf_id):
+        await error(ctx, "%s is not a valid Codeforces username" % cf_id)
+        return
+    
+    converter = commands.MemberConverter()
+    member = await converter.convert(ctx, str(uid))
+
+    member_name = member.name
+
+    cf_coins = cf.user_coins(cf_id)
+
+    db.db_write(uid, "name", member_name)
+    db.db_write(uid, "cf_id", cf_id)
+    db.db_write(uid, "cf_score", cf_coins)
+    db.db_write(uid, "kirari_score", 0)
+    
+    user_list = db.common_read("user_list")
+    user_list.append(uid)
+    db.common_write("user_list", user_list)
+
+    response = "New user %s registered:\n ```ID: %s\nCodeforces: %s\nCash: %d%s\n```"
+    await ctx.send(response % (member_name, str(uid), cf_id, int(cf_coins), coin_symbol))
+
+
+@commands.command(brief = "Show how much cash you have.")
+async def cash(ctx):
+
+    """
+    Show how much cash you have.
+    """
+
+    uid = ctx.author.id
+    
+    if not is_user(uid):
+        await error(ctx, "You are not a registered user.")
+        return
+
+    cf_coins = int(db.db_read(uid, "cf_score"))
+    kirari_coins = int(db.db_read(uid, "kirari_score"))
+    
+    response = "Cash for user : **%s**```Coins from CF: %d%s\nCoins from Kirari: %d%s\nTotal: %d%s\n```"
+    await ctx.send(response % (ctx.author.name, cf_coins, coin_symbol, kirari_coins, coin_symbol, cf_coins + kirari_coins, coin_symbol))
+
+@commands.command(brief = "Register a new admin.")
+async def register_admin(ctx, user):
+
+    """
+    register_admin <@mention the user> registers that user
+    to be an admin. Commanding user must be admin.
+    """
+
+    if not await admin_check(ctx):
+        return
+
+    uid = process_mention(user)
+
+    if not is_user(uid):
+        await error(ctx, "Proposed user %d is not a registered user." % uid)
+        return
+
+    if is_admin(uid):
+        await error(ctx, "Proposed user %d is already an admin." % uid)
+
+    admin_list = db.common_read("admin_list")
+     
+    admin_list.append(uid)
+
+    db.common_write("admin_list", admin_list)
+
+    member_name = db.db_read(uid, "name")
+
+    await ctx.send("Proposed user %s (%d) is now an admin." % (member_name, uid))
+
+@commands.command(brief = "Update the Codeforces username for a user")
+async def cf_update(ctx, user, cf_id):
+
+    """
+    cf_update <@mention the user> <cf-username> changes the Codeforces
+    username of this user to <cf-username>. Commanding user must be admin.
+    """
+
+    if not await admin_check(ctx):
+        return
+    
+    uid = process_mention(user)
+
+    if not is_user(uid):
+        await error(ctx, "The user %d is not a registered user." % uid)
+        return
+
+    if not cf.user_exists(cf_id):
+        await error(ctx, "%s is not a valid Codeforces username" % cf_id)
+        return
+    
+    cf_coins = cf.user_coins(cf_id)
+
+    db.db_write(uid, "cf_id", cf_id)
+    db.db_write(uid, "cf_score", cf_coins)
+    
+    member_name = db.db_read(uid, "name")
+
+    response = "Codeforces ID changed for %s to %s. This changes their Codeforces %s to %d%s."
+
+    await ctx.send(response % (member_name, cf_id, coin_symbol, cf_coins, coin_symbol))
+
+
+@commands.command(brief = "Refresh the Codeforces scores/coins for each user")
+async def cf_refresh(ctx):
+
+    """
+    Refresh the Codeforces scores/coins of all users. Commanding user
+    must be admin.
+    """
+
+    if not await admin_check(ctx):
+        return
+
+    uids = db.common_read("user_list")
+    
+    response = "Refreshed Codeforces Coins (%s): ```" % coin_symbol
+
+    for uid in uids:
+        logger.error(uid)
+        cf_id = db.db_read(uid, "cf_id")
+        cf_coins = cf.user_coins(cf_id)
+        member_name = db.db_read(uid, "name") 
+        db.db_write(uid, "cf_score", cf_coins)
+
+        current_str = "%s (CF: %s) : %d%s\n" % (member_name, cf_id, cf_coins, coin_symbol) 
+
+        response += current_str
+
+    response += "```\n"
+    
+    await ctx.send(response)
+
+exports = [
+        echo,
+        admins, 
+        my_id,
+        am_i_admin,
+        register,
+        cash,
+        register_admin,
+        cf_update,
+        cf_refresh
+        ]
+
+   
