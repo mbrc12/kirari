@@ -1,1 +1,1 @@
-web: sh boot.sh
+bot: sh boot.sh
