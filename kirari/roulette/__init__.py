@@ -225,8 +225,11 @@ async def begin(ctx):
 
         member_name = db.db_read(uid, "name")
 
-        summary += "%s: \t [%s%d%s]\n" % (
-                member_name, 
+        spc = " " * (20 - len(member_name))
+
+        summary += "%s: %s [%s%d%s]\n" % (
+                member_name,
+                spc,
                 '+' if delta >= 0 else '-',
                 delta if delta >= 0 else -delta,
                 coin_symbol
@@ -272,7 +275,8 @@ async def ranklist(ctx):
     server_value = db.db_read(server_uid, "score")
 
     for (score, member_name) in users:
-        response += "%s: \t [%d%s]\n" % (member_name, score, coin_symbol)
+        spc = " " * (20 - len(member_name))
+        response += "%s: %s [%d%s]\n" % (member_name, spc, score, coin_symbol)
 
     response += """``` Kirari has: `%d%s`""" % (server_value, coin_symbol)
 
