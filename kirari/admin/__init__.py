@@ -11,6 +11,10 @@ from kirari.constants import *
 
 logger = logging.getLogger(__name__)
 
+@commands.command(brief = "Introduce myself")
+async def intro(ctx):
+    await ctx.send("It doesn't matter, if it isn't about gambling.")
+
 @commands.command()
 async def echo(ctx):
     await ctx.send(process(ctx.message.content))
@@ -226,6 +230,7 @@ async def cf_refresh(ctx):
     await ctx.send(response)
 
 exports = [
+        intro,
         echo,
         admins, 
         my_id,
