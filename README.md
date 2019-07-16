@@ -1,6 +1,8 @@
-# Kirari
+<p align="center">
+  <img width="500" height="500" src="https://i.imgur.com/h5wSa9O.png">
+</p>
 
-![Kirari's image](https://i.imgur.com/h5wSa9O.png)
+# Kirari
 
 Kirari is a Discord bot. Her purpose is to maintain/play a game of customized roulette with
 the members of the Guild, and incentivize solving problems on Codeforces.
