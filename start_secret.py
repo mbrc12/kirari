@@ -10,10 +10,10 @@ base_cf = os.environ['BASE_CF']
 os.system("rm -rf ./resources/db.sqlite")
 # db.common_write("admin_list", [])
 
-db.db_write(mbrc_id, "name", base_name)
-db.db_write(mbrc_id, "cf_id", base_cf)
-db.db_write(mbrc_id, "cf_score", 0)
-db.db_write(mbrc_id, "kirari_score", 0)
+db.db_write(base_id, "name", base_name)
+db.db_write(base_id, "cf_id", base_cf)
+db.db_write(base_id, "cf_score", 0)
+db.db_write(base_id, "kirari_score", 0)
 
 db.common_write("admin_list", [base_id])
 db.common_write("user_list", [base_id])
