@@ -21,6 +21,9 @@ def get_time():
 def is_game_on():
     return db.common_read("game_on")
 
+def is_betting_on():
+    return db.common_read("betting_on")
+
 # At same bet_value, the expected winnings should be zero
 # at same bet_size
 def get_delta(win, bet_size, bet_value):
@@ -105,6 +108,10 @@ async def bet(ctx, bet_str, bet_value):
 
     if not is_game_on():
         await error(ctx, "No game is currently under progress.")
+        return
+    
+    if not is_betting_on():
+        await error(ctx, "Betting phase is over.")
         return
 
     try:
