@@ -17,7 +17,7 @@ the members of the Guild, and incentivize solving problems on Codeforces.
 
 ## Trivia:
 
-The coin symbol used by Kirari is 견, which is `0xACAC` in Unicode. ;)
+The coin symbol used by Kirari is ⏣, which is an aromatic benzene.
 
 This readme will be extended as and when needed.
 

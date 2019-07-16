@@ -4,7 +4,7 @@ common_uid = 0
 kirari_prefix = "k;"
 kirari_key_env = "KIRARI_KEY"
 
-coin_symbol = '견'
+coin_symbol = '⏣'
 
 roulette_size = 36
 roulette_duration = 60 # must be multiple of step_size
