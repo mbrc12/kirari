@@ -3,7 +3,7 @@ import os
 import kirari.db as db
 from kirari.constants import *
 
-base_id = os.environ['BASE_ID']
+base_id = int(os.environ['BASE_ID'])
 base_name = os.environ['BASE_NAME']
 base_cf = os.environ['BASE_CF']
 
