@@ -267,7 +267,8 @@ async def ranklist(ctx):
         users.append((total_score, member_name))
 
     response = """
-    The ranklist is:```"""
+    The ranklist is:
+    ```"""
 
     server_value = db.db_read(server_uid, "score")
 
@@ -275,7 +276,8 @@ async def ranklist(ctx):
         spc = " " * (20 - len(member_name))
         response += "%s: %s [%s]\n" % (member_name, spc, coinfmt(score))
 
-    response += """``` Kirari has: `%s`""" % coinfmt(server_value)
+    response += """``` 
+    Kirari has: `%s`""" % coinfmt(server_value)
 
     await ctx.send(response)
 

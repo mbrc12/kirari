@@ -115,6 +115,11 @@ async def register(ctx, user, cf_id):
         return
 
     uid = process_mention(user)
+    try:
+        uid = int(uid)
+    except Exception:
+        await error(ctx, "Invalid user.")
+        return
 
     if is_user(uid):
         await error(
