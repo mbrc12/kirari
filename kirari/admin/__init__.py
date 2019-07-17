@@ -125,7 +125,7 @@ async def register(ctx, user, cf_id):
         await error(
             ctx,
             "%s already exists in the database. If you want to update CF username, please use `k%cf_update`."
-            % db.db_read(uid, "name"))
+            % (db.db_read(uid, "name")))
         return
 
     if not cf.user_exists(cf_id):
