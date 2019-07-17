@@ -18,8 +18,8 @@ async def intro(ctx):
 
 
 @commands.command()
-async def echo(ctx):
-    await ctx.send(process(ctx.message.content))
+async def echo(ctx, msg):
+    await ctx.send(msg)
 
 
 @commands.command(brief="Show the list of all admins")
@@ -359,6 +359,44 @@ async def load_db(ctx, url):
     
     await ctx.send("Database successfully loaded from %s." % url)
 
+@commands.command(brief = "Award AC")
+async def award(ctx, user, amt):
+
+    """ 
+    award <user> <amt> awards <user> with an amount of <amt> coins.
+    """
+
+    if not await admin_check(ctx):
+        return
+
+    if is_game_on():
+        await error(ctx, "Game is on. Please award after the game.")
+        return
+    
+    try:
+        amt = int(amt)
+    except Exception:
+        await error(ctx, "Amount must be integer")
+        return
+
+    if amt < 0:
+        await error(ctx, "Amount must be positive")
+        return
+    
+    uid = await get_id(ctx, user)
+    
+    if not is_user(uid):
+        await error(ctx, "User not registered.")
+        return
+
+    current_value = db.db_read(uid, "kirari_score")
+    db.db_write(uid, "kirari_score", current_value + amt)
+
+    await ctx.send("%s was awarded `%s`! Congratulations!" % (
+        db.db_read(uid, "name"),
+        coinfmt(amt)))
+
+
 @commands.command(brief = "Dump database")
 async def dump_db(ctx):
     """
@@ -379,5 +417,5 @@ async def dump_db(ctx):
 
 exports = [
     id, intro, echo, admins, my_id, am_i_admin, register, cash, register_admin,
-    cf_update, cf_refresh, loan, load_db, dump_db
+    cf_update, cf_refresh, loan, load_db, dump_db, award
 ]

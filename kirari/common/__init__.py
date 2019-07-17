@@ -17,7 +17,6 @@ def is_game_on():
 def is_betting_on():
     return db.common_read("betting_on")
 
-
 def process_mention(txt):
     txt = str(txt)
     # Remove all stuff till first digit

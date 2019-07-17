@@ -22,7 +22,7 @@ def get_delta(win, bet_size, bet_value):
     delta = 0
 
     if win:
-        delta = int(round((1 - probability) * bet_value))
+        delta = int((1 - probability) * bet_value)
     else:
         delta = int(round(-probability * bet_value))
 
@@ -31,7 +31,7 @@ def get_delta(win, bet_size, bet_value):
 
 async def parse_bet(ctx, bet_str):
     bets = bet_str.split(',')
-    bet = set([])
+    bet = []
     try:
         for phrase in bets:
             if phrase.find('~') >= 0:
@@ -44,7 +44,7 @@ async def parse_bet(ctx, bet_str):
                 b = int(b)
                 for val in range(1, roulette_size + 1):
                     if a <= val and val <= b:
-                        bet.add(val)
+                        bet.append(val)
             elif phrase.find('m') >= 0:
                 m, r = phrase.split('m')
                 m = int(m)
@@ -53,18 +53,21 @@ async def parse_bet(ctx, bet_str):
                 r = int(r)
                 for val in range(1, roulette_size + 1):
                     if val % m == r:
-                        bet.add(val)
+                        bet.append(val)
+                if r >= m or r < 0:
+                    await error(ctx, "In `<a>m<b>`, `0 <= b < a` is required")
+                    return [], -1
             else:
                 value = 0
                 value = int(phrase)
                 if 1 <= value and value <= roulette_size:
-                    bet.add(value)
+                    bet.append(value)
 
     except Exception:
         await error(ctx, "Wrong bet format. Please check `k;help bet`.")
-        return set([]), -1  # Empty bet
+        return [], -1  # Empty bet
 
-    return bet, 0
+    return list(set(bet)), 0
 
 
 @commands.command(brief="Make a bet")
@@ -121,6 +124,10 @@ async def bet(ctx, bet_str, bet_value):
     if bet_value > current_cash:
         await error(ctx, "You cannot bet more than what you have!")
         return
+    
+    if bet_value <= 0:
+        await error(ctx, "No, please no negative bets. :(")
+        return
 
     bet, flag = await parse_bet(ctx, bet_str)
 
@@ -173,7 +180,7 @@ async def begin(ctx):
     uids = db.common_read("user_list")
 
     for uid in uids:
-        db.db_write(uid, "bet", set([]))
+        db.db_write(uid, "bet", [])
         db.db_write(uid, "bet_value", 0)
 
     response = "Game started. Everyone's bet is currently 0. You have %d seconds to bet." % roulette_duration
