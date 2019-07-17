@@ -125,7 +125,7 @@ async def bet(ctx, bet_str, bet_value):
         await error(ctx, "You cannot bet more than what you have!")
         return
     
-    if bet_value <= 0:
+    if bet_value < 0:
         await error(ctx, "No, please no negative bets. :(")
         return
 
