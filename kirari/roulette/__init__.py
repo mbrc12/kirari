@@ -276,8 +276,8 @@ async def ranklist(ctx):
         spc = " " * (20 - len(member_name))
         response += "%s: %s [%s]\n" % (member_name, spc, coinfmt(score))
 
-    response += """``` 
-    Kirari has: `%s`""" % coinfmt(server_value)
+    response += """```
+Kirari has: `%s`""" % coinfmt(server_value)
 
     await ctx.send(response)
 
