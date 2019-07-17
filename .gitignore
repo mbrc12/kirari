@@ -1,5 +1,7 @@
 bootup.sh
 resources/icon.jpg
+*.json
 *.sqlite
+*.cfg
 __pycache__
 */__pycache__

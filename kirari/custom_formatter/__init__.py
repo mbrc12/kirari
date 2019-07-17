@@ -1,7 +1,8 @@
 import logging
 
-# Custom Formatter for logging shamelessly copied 
+# Custom Formatter for logging shamelessly copied
 # from https://stackoverflow.com/a/56944256/2882634
+
 
 class CustomFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""

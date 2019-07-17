@@ -14,15 +14,6 @@ from kirari.admin import is_user, is_admin, error
 
 logger = logging.getLogger(__name__)
 
-def get_time():
-    sec = time.time()
-    return int(sec)
-
-def is_game_on():
-    return db.common_read("game_on")
-
-def is_betting_on():
-    return db.common_read("betting_on")
 
 # At same bet_value, the expected winnings should be zero
 # at same bet_size
@@ -34,14 +25,14 @@ def get_delta(win, bet_size, bet_value):
         delta = int(round((1 - probability) * bet_value))
     else:
         delta = int(round(-probability * bet_value))
-    
+
     return delta
 
 
 async def parse_bet(ctx, bet_str):
     bets = bet_str.split(',')
     bet = set([])
-    try: 
+    try:
         for phrase in bets:
             if phrase.find('~') >= 0:
                 a, b = phrase.split('~')
@@ -54,11 +45,10 @@ async def parse_bet(ctx, bet_str):
                 for val in range(1, roulette_size + 1):
                     if a <= val and val <= b:
                         bet.add(val)
-
             elif phrase.find('m') >= 0:
                 m, r = phrase.split('m')
                 m = int(m)
-                if r == "": 
+                if r == "":
                     r = "0"
                 r = int(r)
                 for val in range(1, roulette_size + 1):
@@ -77,9 +67,8 @@ async def parse_bet(ctx, bet_str):
     return bet, 0
 
 
-@commands.command(brief = "Make a bet")
+@commands.command(brief="Make a bet")
 async def bet(ctx, bet_str, bet_value):
-
     """bet <bet-string> <bet-amount> makes a bet on the positions in
        in bet-string, at an amount of bet-amount. <bet-string> format
        is as follows:
@@ -98,6 +87,8 @@ async def bet(ctx, bet_str, bet_value):
        Example:
        ~5,6m1,35 bets on the following values:
        1, 2, 3, 4, 5, 35 and all numbers of the form 6k + 1, like 7, 13 etc.
+
+       Bet-value can be all-in. In that case just write 'all' in <bet-value>.
     """
 
     uid = ctx.author.id
@@ -109,25 +100,30 @@ async def bet(ctx, bet_str, bet_value):
     if not is_game_on():
         await error(ctx, "No game is currently under progress.")
         return
-    
+
     if not is_betting_on():
         await error(ctx, "Betting phase is over.")
         return
 
-    try:
-        bet_value = int(bet_value)
-    except Exception:
-        await error(ctx, "The value of your bet must be integer")
-        return
     
     current_cash = db.db_read(uid, "cf_score") + db.db_read(uid, "kirari_score")
-    
+
+    try:
+        if bet_value == "all":
+            bet_value = current_cash
+        else:
+            bet_value = int(bet_value)
+    except Exception:
+        await error(ctx, "The value of your bet must be integer / `all`.")
+        return
+
+
     if bet_value > current_cash:
         await error(ctx, "You cannot bet more than what you have!")
         return
 
     bet, flag = await parse_bet(ctx, bet_str)
-    
+
     if flag < 0:
         return
 
@@ -135,26 +131,22 @@ async def bet(ctx, bet_str, bet_value):
     db.db_write(uid, "bet_value", bet_value)
 
     member_name = db.db_read(uid, "name")
-    
-    iabs = lambda x : x if x >= 0 else -x
-    
+
+    iabs = lambda x: x if x >= 0 else -x
+
     positive_potential = iabs(get_delta(True, len(bet), bet_value))
     negative_potential = iabs(get_delta(False, len(bet), bet_value))
 
     response = """
-    Bet by **%s**:\nYou have bet on the following %d position(s): ```%s```The value of your current bet is **%d%s** (+%d, -%d).
-    """ % ( member_name,
-            len(bet),
-            "<you have bet on nothing>" if len(bet) == 0 else " ".join(map(str, sorted(list(bet)))), 
-            bet_value,
-            coin_symbol,
-            positive_potential,
-            negative_potential)
+    Bet by **%s**:\nYou have bet on the following %d position(s): ```%s```The value of your current bet is **%s** (+%d, -%d).
+    """ % (member_name, len(bet), "<you have bet on nothing>"
+           if len(bet) == 0 else " ".join(map(str, sorted(list(bet)))),
+           coinfmt(bet_value), positive_potential, negative_potential)
 
     await ctx.send(response)
-     
 
-@commands.command(brief = "Begin a new game")
+
+@commands.command(brief="Begin a new game")
 async def begin(ctx):
     """Begins a new game of roulette"""
 
@@ -191,66 +183,71 @@ async def begin(ctx):
 
     for steps in range(roulette_duration // step_size):
         await asyncio.sleep(step_size)
-        await ctx.send("%d seconds left to bet." % (roulette_duration - (steps + 1) * step_size))
-    
+        await ctx.send("%d seconds left to bet." % (roulette_duration -
+                                                    (steps + 1) * step_size))
+
     db.common_write("betting_on", False)
     await ctx.send("Time up. No more bets accepted.")
-    
+
     candidates = [randbelow(roulette_size) + 1 for i in range(candidate_size)]
-    
-    await ctx.send("Candidates to win:\n`%s`" % (" ".join(map(str, sorted(candidates)))))
-    
+
+    await ctx.send("Candidates to win:\n`%s`" %
+                   (" ".join(map(str, sorted(candidates)))))
+
     await asyncio.sleep(candidate_break)
 
     winner_idx = randbelow(candidate_size)
     # Generate result of roulette spin
     result = candidates[winner_idx]
-    
+
     await ctx.send("The winning number is: **%d**" % result)
 
     current_server_value = db.db_read(server_uid, "score")
     server_delta = 0
 
     summary = """```"""
+    someone_bet = False
 
     for uid in uids:
         bet = db.db_read(uid, "bet")
+
+        if len(bet) == 0:
+            continue
+        else:
+            someone_bet = True
+
         bet_value = db.db_read(uid, "bet_value")
 
         delta = get_delta(result in bet, len(bet), bet_value)
 
         kirari_coins = db.db_read(uid, "kirari_score")
         server_delta -= delta
-        kirari_coins += delta;
+        kirari_coins += delta
 
         member_name = db.db_read(uid, "name")
 
         spc = " " * (20 - len(member_name))
 
-        summary += "%s: %s [%s%d%s]\n" % (
-                member_name,
-                spc,
-                '+' if delta >= 0 else '-',
-                delta if delta >= 0 else -delta,
-                coin_symbol
-                )
+        summary += "%s: %s [%s%s]\n" % (member_name, spc,
+                                          '+' if delta >= 0 else '-', 
+                                          coinfmt(delta if delta >= 0 else -delta))
 
         db.db_write(uid, "kirari_score", kirari_coins)
-    
-    summary += """```\nKirari's delta: `%s%d%s`\n""" % (
-            '+' if server_delta >= 0 else '-',
-            server_delta if server_delta >= 0 else -server_delta,
-            coin_symbol
-            )
+
+    if not someone_bet:
+        summary += "<No one bet in this game>"
+
+    summary += """```\nKirari's delta: `%s%s`\n""" % (
+        '+' if server_delta >= 0 else '-',
+        coinfmt(server_delta if server_delta >= 0 else -server_delta))
     db.common_write("game_on", False)
     db.db_write(server_uid, "score", current_server_value + server_delta)
 
     await ctx.send("**Final Scores for this round:**" + summary)
 
 
-@commands.command(brief = "Shows the ranklist")
+@commands.command(brief="Shows the ranklist")
 async def ranklist(ctx):
-
     """
     Shows the ranklist of all users, and the profit made 
     by Kirari till now.
@@ -266,7 +263,7 @@ async def ranklist(ctx):
         member_name = db.db_read(uid, "name")
 
         total_score = cf_coins + kirari_coins
-    
+
         users.append((total_score, member_name))
 
     response = """
@@ -276,14 +273,11 @@ async def ranklist(ctx):
 
     for (score, member_name) in sorted(users)[::-1]:
         spc = " " * (20 - len(member_name))
-        response += "%s: %s [%d%s]\n" % (member_name, spc, score, coin_symbol)
+        response += "%s: %s [%s]\n" % (member_name, spc, coinfmt(score))
 
-    response += """``` Kirari has: `%d%s`""" % (server_value, coin_symbol)
+    response += """``` Kirari has: `%s`""" % coinfmt(server_value)
 
     await ctx.send(response)
 
-exports = [
-        begin,
-        bet,
-        ranklist
-        ]
+
+exports = [begin, bet, ranklist]

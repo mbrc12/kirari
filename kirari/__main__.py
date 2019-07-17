@@ -13,6 +13,7 @@ from kirari.constants import *
 
 logger = logging.getLogger(__name__)
 
+
 def main():
 
     discord_key = ""
@@ -23,8 +24,8 @@ def main():
     except KeyError:
         logger.error("KIRARI_KEY environment variable is not set. Exiting..")
         sys.exit()
-    
-    bot = commands.Bot(command_prefix = kirari_prefix)
+
+    bot = commands.Bot(command_prefix=kirari_prefix)
 
     for exported_command in admin.exports:
         bot.add_command(exported_command)
@@ -36,7 +37,6 @@ def main():
     async def no_DM(ctx):
         return ctx.guild is not None
 
-    
     bot.add_listener(bot_error_handler, name='on_command_error')
 
     bot.run(discord_key)
@@ -44,4 +44,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

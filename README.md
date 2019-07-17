@@ -17,13 +17,11 @@ the members of the Guild, and incentivize solving problems on Codeforces.
 
 ## Trivia:
 
-The coin symbol used by Kirari is ⏣, which is an aromatic benzene.
+The coin symbol used by Kirari is `AC`, which stands for `Accepted`. ;)
 
 This readme will be extended as and when needed.
 
 ## Credits:
-
-* Idea for the coin symbol courtesy [algmyr](https://github.com/algmyr).
 
 * Kirari's image courtesy [ZeroChan](https://www.zerochan.net/2180966).
 

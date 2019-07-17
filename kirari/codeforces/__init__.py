@@ -8,6 +8,7 @@ api_base = "http://codeforces.com/api/"
 
 logger = logging.getLogger(__name__)
 
+
 def make_url(method, **kwargs):
     call = api_base + method + "?"
     if kwargs == {}:
@@ -18,10 +19,11 @@ def make_url(method, **kwargs):
 
     return call[:-1]
 
+
 def get_data(method, **kwargs):
     call = make_url(method, **kwargs)
     data = ""
-    
+
     req = Request(call)
 
     try:
@@ -32,8 +34,9 @@ def get_data(method, **kwargs):
 
     return json.loads(data)
 
+
 def user_exists(user):
-    data = get_data("user.rating", handle = user)
+    data = get_data("user.rating", handle=user)
     try:
         if (data["status"] == "OK"):
             return True
@@ -42,12 +45,13 @@ def user_exists(user):
     except Exception:
         return False
 
+
 def user_accepted_ratings(user):
-    
+
     if not user_exists(user):
         return []
 
-    data = get_data("user.status", handle = user, first = 1, count = 10 ** 8)
+    data = get_data("user.status", handle=user, first=1, count=10**8)
 
     ratings = []
     already_seen = set([])
@@ -67,7 +71,6 @@ def user_accepted_ratings(user):
             pass
     return ratings
 
+
 def user_coins(user):
     return sum(user_accepted_ratings(user))
-
-
